@@ -36,13 +36,12 @@ const Header = () => {
       <div className="flex gap-2 md:order-2">
         <Button 
         className='w-12 h-10 hidden sm:inline' 
-        color='gray' 
+        color='gray'                    
         pill 
         onClick={()=>dispatch(toggleTheme())}>
           {theme === 'light' ? <FaSun/> : <FaMoon/>}
         </Button>
-        {currentUser ? (
-          <Dropdown
+        {currentUser ? <Dropdown
           arrowIcon={false}
           inline
           label={
@@ -63,7 +62,7 @@ const Header = () => {
             <Dropdown.Divider/>
             <Dropdown.Item>Sign out</Dropdown.Item>
           </Dropdown>
-        ) : (
+         : (
           <Link to="/sign-in">
           <Button gradientDuoTone='purpleToBlue' outline>Sign In</Button>
         </Link>)
