@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react'
 import {useSelector} from 'react-redux'
 import {Alert, Button, TextInput} from 'flowbite-react'
-import {getDownloadURL, getStorage, ref, uploadBytesResumable} from 'firebase/storage'
 import { app } from '../firebase'
 import { CircularProgressbar } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
+import { updateFailure, updateStart, updateSuccess } from '../redux/User/userSlice'
+import { useDispatch } from 'react-redux'
 
 
 const DashProfile = () => {
@@ -13,7 +14,8 @@ const DashProfile = () => {
     const [imageFileURl, setImageFileURl] = useState(null)
     const [imageFileUploadingProgress, setImageFileUploadingProgress] = useState(null)
     const [imageFileUploadError, setImageFileUploadError] = useState(null)
-    
+    const [formData, setFormData] = useState({})
+    const dispatch = useDispatch();
     const filePickerRef = useRef();
     const handleImageChnage = (e)=>{
       const file = e.target.files[0]
@@ -22,42 +24,45 @@ const DashProfile = () => {
         setImageFileURl(URL.createObjectURL(file));
       }
     }
-    useEffect(()=>{
-      if(imageFile) {
-        uploadImage();
-      }
-    },[imageFile])
+    
 
-    const uploadImage = async()=>{
-      setImageFileUploadError(null)
-      const storage = getStorage(app)
-      const fileName = new Date().getTime() + imageFile.name;
-      const storageRef = ref(storage, fileName)
-      const uploadTask = uploadBytesResumable(storageRef, imageFile)
-      uploadTask.on(
-        'state_changed',
-        (snapshot) => {
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          setImageFileUploadingProgress(progress.toFixed(0));
-        },
-        (error) => {
-          setImageFileUploadError('Could not upload image (File must be less than 2MB)')
-          setImageFileUploadingProgress(null)
-          setImageFile(null)
-          setImageFileURl(null)
-        },
-        ()=> {
-          getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-            setImageFileURl(downloadURL);
-          })
+    const handlechange = (e)=>{
+      setFormData({...formData, [e.target.id]: e.target.value})
+    }
+    
+    const handleSubmit = async(e)=>{
+      e.preventDefault();
+      if(Object.keys(formData).length === 0) {
+        return;
+      }
+      try {
+        dispatch(updateStart());
+        
+        
+        const res = await fetch(`http://localhost:3000/api/user/update/${currentUser._id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(formData)
+        });
+        const data = await res.json();
+        console.log(data);
+        
+        if(!res.ok) {
+          dispatch(updateFailure(data.message))
+        }else{
+          dispatch(updateSuccess(data))
         }
-      )
+      } catch (error) {
+        dispatch(updateFailure(error.message))
+      }
     }
     
   return (
     <div className='max-w-lg mx-auto p-3 w-full'>
       <h1 className='my-7 text-center font-semibold text-3xl'>profile</h1>
-      <form className='flex flex-col gap-4'>
+      <form onSubmit={handleSubmit} className='flex flex-col gap-4'>
         <input type="file" accept='image/*' onChange={handleImageChnage} ref={filePickerRef} hidden/>
         <div className="relative w-32 h-32 self-center cursor-pointer shadow-md overflow-hidden rounded-full" onClick={()=>filePickerRef.current.click()}>
           {imageFileUploadingProgress && (
@@ -83,9 +88,9 @@ const DashProfile = () => {
         </div>
           {imageFileUploadError && <Alert color='failure'>{imageFileUploadError}</Alert>}
         
-        <TextInput type='text' id='username' placeholder='username' defaultValue={currentUser.username}/>
-        <TextInput type='email' id='email' placeholder='email' defaultValue={currentUser.email}/>
-        <TextInput type='password' id='password' placeholder='password' />
+        <TextInput type='text' id='username' placeholder='username' defaultValue={currentUser.username} onChange={handlechange}/>
+        <TextInput type='email' id='email' placeholder='email' defaultValue={currentUser.email} onChange={handlechange}/>
+        <TextInput type='password' id='password' placeholder='password' onChange={handlechange} />
         <Button type='submit' gradientDuoTone='purpleToBlue' outline>
           Update
         </Button>
