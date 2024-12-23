@@ -4,6 +4,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { AiOutlineSearch } from 'react-icons/ai'
 import { FaMoon,FaSun } from 'react-icons/fa'
 import { useSelector} from 'react-redux'
+import { signoutSuccess } from '../redux/User/userSlice'
 import { useDispatch } from 'react-redux'
 import { toggleTheme } from '../redux/theme/themeSlice' 
 
@@ -14,6 +15,22 @@ const Header = () => {
 
   const dispatch = useDispatch();
 
+    const handleSignOut = async()=>{
+          try {
+            const res = await fetch('api/user/signout', {
+              method: 'POST',
+            });
+            const data = res.json();
+            if(!res.ok){
+              console.log(data.message); 
+            } else{
+              dispatch(signoutSuccess())
+            }
+          } catch (error) {
+            console.log(error.message);
+            
+          }
+        }
   return (
     <Navbar className='border-b-2'>
       <Link to="/" className='self-center whitespace-nowrap text-sm sm:text-xl font-semibold dark:text-white'>
@@ -60,7 +77,7 @@ const Header = () => {
             <Dropdown.Item>Profile</Dropdown.Item>
             </Link>
             <Dropdown.Divider/>
-            <Dropdown.Item>Sign out</Dropdown.Item>
+            <Dropdown.Item onClick={handleSignOut}>Sign out</Dropdown.Item>
           </Dropdown>
          : (
           <Link to="/sign-in">
