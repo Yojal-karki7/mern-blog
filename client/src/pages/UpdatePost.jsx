@@ -43,38 +43,45 @@ const UpdatePost = () => {
                 setImageUploadError('Please select an image');
                 return;
             }
-            setImageUploadError(null);
-            setImageUploadProgress(0);
-
-
+    
             const data = new FormData();
             data.append('file', file);
             data.append('upload_preset', 'mern-blog');
             data.append('cloud_name', 'dtijdjc5e');
-
-            const response = await fetch(
-                `https://api.cloudinary.com/v1_1/dtijdjc5e/image/upload`,
-                {
-                    method: 'POST',
-                    body: data,
+    
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', `https://api.cloudinary.com/v1_1/dtijdjc5e/image/upload`);
+    
+            xhr.upload.onprogress = (event) => {
+                if (event.lengthComputable) {
+                    const progress = Math.round((event.loaded / event.total) * 100);
+                    setImageUploadProgress(progress);
                 }
-            );
-
-            if (!response.ok) {
-                throw new Error('Failed to upload image');
-            }
-
-            const result = await response.json();
-
-
-            setImageUploadProgress(null);
-            setImageUploadError(null);
-            setFormData({ ...formData, image: result.secure_url });
+            };
+    
+            xhr.onload = () => {
+                if (xhr.status === 200) {
+                    const result = JSON.parse(xhr.responseText);
+                    setFormData({ ...formData, image: result.secure_url });
+                    setImageUploadProgress(null);
+                    setImageUploadError(null);
+                } else {
+                    throw new Error('Failed to upload image');
+                }
+            };
+    
+            xhr.onerror = () => {
+                throw new Error('Image upload failed!');
+            };
+    
+            xhr.send(data);
         } catch (error) {
-            setImageUploadError('Image upload failed!');
+            console.error(error);
+            setImageUploadError(error.message || 'Something went wrong with the upload');
             setImageUploadProgress(null);
         }
     };
+    
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
