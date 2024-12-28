@@ -64,6 +64,7 @@ const DashProfile = () => {
       const data = await res.json();
       setImageFileURL(data.secure_url);
       setImageFileUploadingProgress(null);
+      setFormData({...formData, profilePicture: data.secure_url})
     } catch (error) {
       setImageFileUploadError('Could not upload image.');
       setImageFileUploadingProgress(null);
